@@ -1,0 +1,95 @@
+# Blog002 Architecture Plan
+
+## 1) Module structure and file organization
+
+Rust workspace (Issue #1) with two apps and one shared crate:
+- `apps/api` (Axum backend)
+- `apps/web` (Leptos frontend)
+- `crates/shared` (shared DTOs, enums, validation-friendly types)
+
+Top-level layout:
+- `Cargo.toml` (workspace members + shared deps)
+- `docker-compose.yml` (Issue #2)
+- `.env.example` (document required runtime vars)
+- `migrations/` (sqlx or refinery style migrations, Issue #3 onward)
+- `infra/` (Dockerfiles + deploy config in Issue #26)
+
+Backend (`apps/api/src`):
+- `main.rs` (bootstrap)
+- `config.rs` (env loading)
+- `app_state.rs` (shared state: DB pool, S3 client, JWT config)
+- `db/` (pool init, migration runner)
+- `auth/` (`jwt.rs`, `middleware.rs`, `handlers.rs`)
+- `modules/`
+  - `categories/` (model/repo/service/handler)
+  - `tags/`
+  - `posts/`
+  - `uploads/`
+- `http/`
+  - `routes.rs`
+  - `error.rs` (central API error mapping)
+  - `validation.rs` (shared input validators)
+- `tests/` (integration tests, Issue #24)
+
+Frontend (`apps/web/src`):
+- `main.rs`
+- `app.rs` (router shell)
+- `api/` (typed client wrappers)
+- `state/` (auth/session state)
+- `pages/`
+  - `admin/login.rs`
+  - `admin/categories.rs`
+  - `admin/tags.rs`
+  - `admin/posts_list.rs`
+  - `admin/post_form.rs`
+  - `public/home.rs`
+  - `public/post_detail.rs`
+  - `public/filter.rs`
+- `components/` (reusable form, editor, upload, pagination)
+- `styles/` (Tailwind entry + theme tokens, Issue #4)
+
+Shared crate (`crates/shared/src`):
+- `dto/` request/response types used by API + frontend client
+- `auth.rs` claims/session types
+- `pagination.rs`
+- `errors.rs` API error payload schema
+
+## 2) Dependencies between issues
+
+Foundation:
+- #1 workspace scaffold is prerequisite for all
+- #2 local Docker compose enables API/web/db service startup
+- #3 DB + migration framework is prerequisite for all model/API work
+- #4 Tailwind setup is prerequisite for UI-heavy admin/public pages
+
+Auth chain:
+- #5 admin model/seed -> #6 login JWT -> #7 auth middleware -> #8 admin login page
+
+Taxonomy chain:
+- #9 category/tag schema -> #10 category CRUD + #11 tag CRUD -> #12 admin management pages
+
+Media chain:
+- #13 S3 client/service -> #14 upload endpoint -> #15 frontend upload component
+
+Post chain:
+- #16 post schema (FK to categories/tags, image refs) -> #17 post CRUD -> #18 list/delete -> #19 create/edit form
+
+Public site chain:
+- #20 public read APIs -> #21 homepage pagination -> #22 post detail markdown -> #23 category/tag filtering
+
+Hardening/finalization:
+- #24 integration tests should cover #6, #7, #10, #11, #17, #20
+- #25 global error handling + validation ideally introduced early but finalized after core endpoints exist
+- #26 production Dockerfiles/deploy config after app behavior is stable
+
+## 3) Key design decisions
+
+- Use a layered backend (`handler -> service -> repository`) for testability and stable API contracts.
+- Use typed DTOs in `crates/shared` to reduce API/frontend drift.
+- Prefer stateless JWT auth with short-lived access token; middleware injects authenticated admin context.
+- Use migration-first schema evolution; every model/API issue includes migration updates.
+- Keep uploads metadata in DB and binary objects in S3-compatible storage.
+- Standardize list endpoints around pagination/filter query structs from shared crate.
+- Centralize error and validation responses to enforce one JSON error contract.
+- Keep frontend pages thin: page-level data loading + reusable form/list/upload components.
+- Build CRUD endpoints with consistent route conventions to simplify integration tests.
