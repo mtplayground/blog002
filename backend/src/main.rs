@@ -5,6 +5,8 @@ use axum::{routing::get, Json, Router};
 use serde::Serialize;
 use tracing::info;
 
+mod db;
+
 #[derive(Serialize)]
 struct HealthResponse {
     status: &'static str,
@@ -16,6 +18,10 @@ async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
     init_tracing();
 
+    let db_settings = db::DatabaseSettings::from_env()?;
+    let pool = db::connect(&db_settings).await?;
+    db::run_migrations(&pool).await?;
+
     let port = read_port("BACKEND_PORT")?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
@@ -26,6 +32,9 @@ async fn main() -> Result<()> {
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .with_context(|| format!("failed to bind backend listener on {addr}"))?;
+
+    // Keep the pool alive for the process lifetime; route state wiring is added in later issues.
+    let _pool = pool;
 
     info!("backend listening on http://{addr}");
     axum::serve(listener, app)
