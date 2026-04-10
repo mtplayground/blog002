@@ -11,7 +11,9 @@ mod pages;
 mod state;
 
 use components::layout::BaseLayout;
-use pages::admin_login::AdminLoginPage;
+use pages::{
+    admin_categories::AdminCategoriesPage, admin_login::AdminLoginPage, admin_tags::AdminTagsPage,
+};
 use state::auth::use_or_provide_auth_context;
 
 #[component]
@@ -60,6 +62,20 @@ fn AdminDashboardPage() -> impl IntoView {
                         None => "No JWT found. Sign in at /admin/login.".to_string(),
                     }}
                 </p>
+                <div class="flex flex-wrap gap-2">
+                    <a
+                        class="inline-flex items-center rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:text-white"
+                        href="/admin/categories"
+                    >
+                        "Manage categories"
+                    </a>
+                    <a
+                        class="inline-flex items-center rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:text-white"
+                        href="/admin/tags"
+                    >
+                        "Manage tags"
+                    </a>
+                </div>
             </div>
         </BaseLayout>
     }
@@ -77,6 +93,8 @@ async fn main() -> Result<()> {
         .route("/", get(home_handler))
         .route("/admin", get(admin_dashboard_handler))
         .route("/admin/login", get(admin_login_handler))
+        .route("/admin/categories", get(admin_categories_handler))
+        .route("/admin/tags", get(admin_tags_handler))
         .route("/styles.css", get(styles_handler));
 
     let listener = tokio::net::TcpListener::bind(addr)
@@ -117,6 +135,14 @@ async fn admin_login_handler() -> Html<String> {
 
 async fn admin_dashboard_handler() -> Html<String> {
     render_document(leptos::ssr::render_to_string(|| view! { <AdminDashboardPage /> }))
+}
+
+async fn admin_categories_handler() -> Html<String> {
+    render_document(leptos::ssr::render_to_string(|| view! { <AdminCategoriesPage /> }))
+}
+
+async fn admin_tags_handler() -> Html<String> {
+    render_document(leptos::ssr::render_to_string(|| view! { <AdminTagsPage /> }))
 }
 
 fn render_document(app_html: String) -> Html<String> {
