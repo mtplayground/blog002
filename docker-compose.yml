@@ -47,6 +47,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-blog002}:${POSTGRES_PASSWORD:-blog002}@postgres:5432/${POSTGRES_DB:-blog002}
       DB_MAX_CONNECTIONS: ${DB_MAX_CONNECTIONS:-10}
       DB_CONNECT_TIMEOUT_SECS: ${DB_CONNECT_TIMEOUT_SECS:-5}
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-32-char-minimum-secret}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-60}
       S3_ENDPOINT: http://minio:9000
       S3_REGION: ${S3_REGION:-us-east-1}
       S3_BUCKET: ${S3_BUCKET:-blog002-local}

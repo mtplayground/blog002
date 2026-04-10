@@ -17,3 +17,4 @@ uuid.workspace = true
 chrono.workspace = true
 argon2.workspace = true
 rand_core.workspace = true
+jsonwebtoken.workspace = true
