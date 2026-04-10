@@ -6,6 +6,7 @@ use serde::Serialize;
 use tracing::info;
 
 mod db;
+mod models;
 
 #[derive(Serialize)]
 struct HealthResponse {
