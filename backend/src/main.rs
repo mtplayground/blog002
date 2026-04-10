@@ -1,8 +1,8 @@
 use std::{env, net::SocketAddr};
 
 use anyhow::{Context, Result};
-use axum::{routing::get, Json, Router};
-use backend::{auth, db, state::AppState};
+use axum::{middleware, routing::get, Json, Router};
+use backend::{admin, auth, db, state::AppState};
 use serde::Serialize;
 use tracing::info;
 
@@ -28,11 +28,16 @@ async fn main() -> Result<()> {
         db_pool: pool,
         jwt_config,
     };
+    let admin_routes = admin::routes::router().route_layer(middleware::from_fn_with_state(
+        state.clone(),
+        auth::middleware::require_admin_auth,
+    ));
 
     let app = Router::new()
         .route("/", get(root_handler))
         .route("/health", get(health_handler))
         .merge(auth::routes::router())
+        .merge(admin_routes)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(addr)
