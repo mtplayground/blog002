@@ -1,11 +1,7 @@
 use std::env;
 
 use anyhow::{bail, Context, Result};
-use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
-use rand_core::OsRng;
-
-#[path = "../db/mod.rs"]
-mod db;
+use backend::{auth::password, db};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -20,7 +16,7 @@ async fn main() -> Result<()> {
     let pool = db::connect(&db_settings).await?;
     db::run_migrations(&pool).await?;
 
-    let password_hash = hash_password(&password)?;
+    let password_hash = password::hash_password(&password)?;
 
     let result = sqlx::query(
         "INSERT INTO admins (email, password_hash) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING",
@@ -50,13 +46,4 @@ fn validate_seed_input(email: &str, password: &str) -> Result<()> {
     }
 
     Ok(())
-}
-
-fn hash_password(password: &str) -> Result<String> {
-    let salt = SaltString::generate(&mut OsRng);
-    let hash = Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
-        .context("failed to hash ADMIN_PASSWORD")?;
-
-    Ok(hash.to_string())
 }

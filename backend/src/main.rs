@@ -2,11 +2,9 @@ use std::{env, net::SocketAddr};
 
 use anyhow::{Context, Result};
 use axum::{routing::get, Json, Router};
+use backend::{auth, db, state::AppState};
 use serde::Serialize;
 use tracing::info;
-
-mod db;
-mod models;
 
 #[derive(Serialize)]
 struct HealthResponse {
@@ -22,20 +20,24 @@ async fn main() -> Result<()> {
     let db_settings = db::DatabaseSettings::from_env()?;
     let pool = db::connect(&db_settings).await?;
     db::run_migrations(&pool).await?;
+    let jwt_config = auth::jwt::JwtConfig::from_env()?;
 
     let port = read_port("BACKEND_PORT")?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    let state = AppState {
+        db_pool: pool,
+        jwt_config,
+    };
 
     let app = Router::new()
         .route("/", get(root_handler))
-        .route("/health", get(health_handler));
+        .route("/health", get(health_handler))
+        .merge(auth::routes::router())
+        .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .with_context(|| format!("failed to bind backend listener on {addr}"))?;
-
-    // Keep the pool alive for the process lifetime; route state wiring is added in later issues.
-    let _pool = pool;
 
     info!("backend listening on http://{addr}");
     axum::serve(listener, app)
