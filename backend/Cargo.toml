@@ -13,3 +13,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 dotenvy.workspace = true
 anyhow.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+argon2.workspace = true
+rand_core.workspace = true
