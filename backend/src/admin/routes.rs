@@ -6,7 +6,10 @@ use axum::{
 use serde::Serialize;
 
 use crate::{
-    admin::{categories::handlers as category_handlers, tags::handlers as tag_handlers},
+    admin::{
+        categories::handlers as category_handlers, tags::handlers as tag_handlers,
+        uploads::handlers as upload_handlers,
+    },
     auth::middleware::AuthenticatedAdmin,
 };
 
@@ -41,6 +44,7 @@ pub fn router() -> Router {
                 .put(tag_handlers::update_tag)
                 .delete(tag_handlers::delete_tag),
         )
+        .route("/api/admin/upload", post(upload_handlers::upload_image))
 }
 
 async fn admin_ping(Extension(admin): Extension<AuthenticatedAdmin>) -> Json<AdminPingResponse> {
