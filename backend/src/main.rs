@@ -2,7 +2,7 @@ use std::{env, net::SocketAddr};
 
 use anyhow::{Context, Result};
 use axum::{middleware, routing::get, Json, Router};
-use backend::{admin, auth, db, state::AppState};
+use backend::{admin, auth, db, state::AppState, uploads};
 use serde::Serialize;
 use tracing::info;
 
@@ -21,12 +21,17 @@ async fn main() -> Result<()> {
     let pool = db::connect(&db_settings).await?;
     db::run_migrations(&pool).await?;
     let jwt_config = auth::jwt::JwtConfig::from_env()?;
+    let s3_settings = uploads::s3_client::S3Settings::from_env()?;
+    let s3_client = uploads::s3_client::build_client(&s3_settings).await?;
+    let upload_service = uploads::service::UploadService::new(s3_client, s3_settings);
+    upload_service.ensure_bucket_exists().await?;
 
     let port = read_port("BACKEND_PORT")?;
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let state = AppState {
         db_pool: pool,
         jwt_config,
+        upload_service,
     };
     let admin_routes = admin::routes::router().route_layer(middleware::from_fn_with_state(
         state.clone(),
