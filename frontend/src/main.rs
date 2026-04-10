@@ -12,7 +12,8 @@ mod state;
 
 use components::{image_upload::ImageUpload, layout::BaseLayout};
 use pages::{
-    admin_categories::AdminCategoriesPage, admin_login::AdminLoginPage, admin_tags::AdminTagsPage,
+    admin_categories::AdminCategoriesPage, admin_login::AdminLoginPage,
+    admin_posts::AdminPostsPage, admin_tags::AdminTagsPage,
 };
 use state::auth::use_or_provide_auth_context;
 
@@ -76,6 +77,12 @@ fn AdminDashboardPage() -> impl IntoView {
                     >
                         "Manage tags"
                     </a>
+                    <a
+                        class="inline-flex items-center rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:text-white"
+                        href="/admin/posts"
+                    >
+                        "Manage posts"
+                    </a>
                 </div>
 
                 <ImageUpload
@@ -115,6 +122,7 @@ async fn main() -> Result<()> {
         .route("/admin/login", get(admin_login_handler))
         .route("/admin/categories", get(admin_categories_handler))
         .route("/admin/tags", get(admin_tags_handler))
+        .route("/admin/posts", get(admin_posts_handler))
         .route("/styles.css", get(styles_handler));
 
     let listener = tokio::net::TcpListener::bind(addr)
@@ -163,6 +171,10 @@ async fn admin_categories_handler() -> Html<String> {
 
 async fn admin_tags_handler() -> Html<String> {
     render_document(leptos::ssr::render_to_string(|| view! { <AdminTagsPage /> }))
+}
+
+async fn admin_posts_handler() -> Html<String> {
+    render_document(leptos::ssr::render_to_string(|| view! { <AdminPostsPage /> }))
 }
 
 fn render_document(app_html: String) -> Html<String> {
