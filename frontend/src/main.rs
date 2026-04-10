@@ -10,7 +10,7 @@ mod components;
 mod pages;
 mod state;
 
-use components::layout::BaseLayout;
+use components::{image_upload::ImageUpload, layout::BaseLayout};
 use pages::{
     admin_categories::AdminCategoriesPage, admin_login::AdminLoginPage, admin_tags::AdminTagsPage,
 };
@@ -48,6 +48,7 @@ fn HomePage() -> impl IntoView {
 #[component]
 fn AdminDashboardPage() -> impl IntoView {
     let auth = use_or_provide_auth_context();
+    let uploaded_image_url = RwSignal::new(None::<String>);
 
     view! {
         <BaseLayout>
@@ -76,6 +77,25 @@ fn AdminDashboardPage() -> impl IntoView {
                         "Manage tags"
                     </a>
                 </div>
+
+                <ImageUpload
+                    token=Signal::derive(move || auth.token())
+                    on_uploaded=Callback::new(move |url: String| {
+                        uploaded_image_url.set(Some(url));
+                    })
+                />
+
+                <Show
+                    when=move || uploaded_image_url.get().is_some()
+                    fallback=|| view! { <></> }
+                >
+                    <p class="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
+                        {move || format!(
+                            "Latest uploaded URL: {}",
+                            uploaded_image_url.get().unwrap_or_default()
+                        )}
+                    </p>
+                </Show>
             </div>
         </BaseLayout>
     }
