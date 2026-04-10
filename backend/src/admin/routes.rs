@@ -5,7 +5,10 @@ use axum::{
 };
 use serde::Serialize;
 
-use crate::{admin::categories::handlers as category_handlers, auth::middleware::AuthenticatedAdmin};
+use crate::{
+    admin::{categories::handlers as category_handlers, tags::handlers as tag_handlers},
+    auth::middleware::AuthenticatedAdmin,
+};
 
 #[derive(Debug, Serialize)]
 struct AdminPingResponse {
@@ -27,6 +30,16 @@ pub fn router() -> Router {
             get(category_handlers::get_category)
                 .put(category_handlers::update_category)
                 .delete(category_handlers::delete_category),
+        )
+        .route(
+            "/api/admin/tags",
+            post(tag_handlers::create_tag).get(tag_handlers::list_tags),
+        )
+        .route(
+            "/api/admin/tags/:id",
+            get(tag_handlers::get_tag)
+                .put(tag_handlers::update_tag)
+                .delete(tag_handlers::delete_tag),
         )
 }
 
