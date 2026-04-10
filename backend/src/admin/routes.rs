@@ -1,14 +1,14 @@
 use axum::{
     extract::Extension,
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use serde::Serialize;
 
 use crate::{
     admin::{
-        categories::handlers as category_handlers, tags::handlers as tag_handlers,
-        uploads::handlers as upload_handlers,
+        categories::handlers as category_handlers, posts::handlers as post_handlers,
+        tags::handlers as tag_handlers, uploads::handlers as upload_handlers,
     },
     auth::middleware::AuthenticatedAdmin,
 };
@@ -43,6 +43,15 @@ pub fn router() -> Router {
             get(tag_handlers::get_tag)
                 .put(tag_handlers::update_tag)
                 .delete(tag_handlers::delete_tag),
+        )
+        .route(
+            "/api/admin/posts",
+            post(post_handlers::create_post).get(post_handlers::list_posts),
+        )
+        .route("/api/admin/posts/slug/:slug", get(post_handlers::get_post_by_slug))
+        .route(
+            "/api/admin/posts/:id",
+            put(post_handlers::update_post).delete(post_handlers::delete_post),
         )
         .route("/api/admin/upload", post(upload_handlers::upload_image))
 }
